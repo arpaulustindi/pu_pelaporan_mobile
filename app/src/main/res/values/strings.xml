@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Pelaporan</string>
+    <string name="to_measurement_button">Pengukuran</string>
+    <string-array name="arcore_measurement_buttons">
+        <item>@string/to_measurement_button</item>
+    </string-array>
+    <string name="distance_from_camera">Jarak Dari Kamera</string>
+    <string name="distance_of_2_points">Jarak Antara 2 Titik</string>
+    <string name="distance_of_multiple_points">Jarak Multiple Titik</string>
+    <string name="distance_from_ground">Jarak Dari Tanah</string>
+    <string name="clear">Clear</string>
+    <string name="initCM">0.0</string>
+    <string-array name="distance_mode">
+        <item>@string/distance_from_camera</item>
+        <item>@string/distance_of_2_points</item>
+        <item>@string/distance_of_multiple_points</item>
+        <item>@string/distance_from_ground</item>
+    </string-array>
+</resources>
