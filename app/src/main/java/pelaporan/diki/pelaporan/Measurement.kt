@@ -1,27 +1,27 @@
 package pelaporan.diki.pelaporan
 
 import android.annotation.SuppressLint
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
 import android.app.Activity
 import android.app.ActivityManager
 import android.app.AlertDialog
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.*
+import android.media.Image
 import android.net.Uri
-import android.os.Build
-import android.os.Environment
+import android.os.*
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
+import android.view.PixelCopy
 import android.view.View
 import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
+import com.diki.pelaporan.R
 import com.google.ar.core.*
+import com.google.ar.core.ImageFormat
 import com.google.ar.sceneform.AnchorNode
 import com.google.ar.sceneform.FrameTime
 import com.google.ar.sceneform.Node
@@ -30,19 +30,17 @@ import com.google.ar.sceneform.math.Vector3
 import com.google.ar.sceneform.rendering.*
 import com.google.ar.sceneform.ux.ArFragment
 import com.google.ar.sceneform.ux.TransformableNode
-import com.diki.pelaporan.R
 import kotlinx.android.synthetic.main.activity_measurement.*
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStream
-import com.google.ar.sceneform.rendering.Color as arColor
-import java.util.Objects
+import java.io.*
+import java.util.*
 import kotlin.math.pow
 import kotlin.math.sqrt
+import com.google.ar.sceneform.rendering.Color as arColor
 
 
 class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
-
+    private lateinit var _metadata : String
+    private lateinit var gambarAr : Image
     private val MIN_OPENGL_VERSION = 3.0
     private val TAG: String = Measurement::class.java.getSimpleName()
 
@@ -383,32 +381,115 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
     }
 
     private  fun laporButton(){
-        val bingkai = findViewById<LinearLayout>(R.id.linear_layout)
+        val bingkai = findViewById<FrameLayout>(R.id.sceneform_fragment)
         laporButton = findViewById(R.id.laporButton)
         laporButton.setOnClickListener{
+            /*Gambar AR*/
+            //Skema 1
 
+            gambarAr = arFragment!!.arSceneView.arFrame!!.acquireCameraImage()
+
+            simpanGambar3(gambarAr)
+            gambarAr.close()
+            val intent = Intent(this@Measurement, Laporan::class.java)
+            intent.putExtra("resId", lokasiFile)
+            intent.putExtra("metadata", _metadata)
+            startActivity(intent)
+            //--Skema 1
+
+            //Skema 2
+            /*
             val bitmap = screenGambar(bingkai)
             if(bitmap != null){
                 simpanGambar(bitmap)
                 val intent = Intent(this@Measurement, Laporan::class.java)
                 intent.putExtra("resId", lokasiFile)
                 startActivity(intent)
+            } else {
+                println("-----bitmap null")
             }
+            */
+
+            //--Skema 2
+
         }
     }
 
     private  fun screenGambar(v: View): Bitmap?{
         var gambar: Bitmap? = null
+
         try {
             gambar = Bitmap.createBitmap(v.measuredWidth, v.measuredHeight, Bitmap.Config.ARGB_8888)
+            PixelCopy.request(arFragment!!.arSceneView, gambar, {}, Handler(Looper.getMainLooper()))
             val canvas = Canvas(gambar)
             v.draw(canvas)
+
+
+
         } catch (e: Exception){
             Log.e("GFG","Gagal Capture Gambar")
         }
         return gambar
     }
+    private fun simpanGambar2(image: Image){
+        val filename = "${System.currentTimeMillis()}.jpg"
+        lokasiFile = "/storage/emulated/0" + "/" + Environment.DIRECTORY_PICTURES + "/" + filename
+        println("---- LOKASI FILE $lokasiFile")
+        WriteImageInformation(image,filename)
+
+    }
+
+    private fun simpanGambar3(image: Image){
+
+        var data: ByteArray? = null
+        data = NV21toJPEG(
+            YUV_420_888toNV21(image),
+            image.width, image.height
+        )
+        val bitmap: Bitmap = BitmapFactory.decodeByteArray(data, 0, data!!.size)
+
+        val filename = "${System.currentTimeMillis()}.jpg"
+        //lokasiFile = Environment.DIRECTORY_PICTURES.toString() + "/" + filename
+        var fos: OutputStream? = null
+        // For devices running android >= Q
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // getting the contentResolver
+            this.contentResolver?.also { resolver ->
+
+                // Content resolver will process the contentvalues
+                val contentValues = ContentValues().apply {
+
+                    // putting file information in content values
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "image/jpg")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                }
+
+                // Inserting the contentValues to
+                // contentResolver and getting the Uri
+                val imageUri: Uri? = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                val x = imageUri.toString().split(":")
+                lokasiFile = "/storage/emulated/0" + "/" + Environment.DIRECTORY_PICTURES + "/" + filename
+
+                // Opening an outputstream with the Uri that we got
+                fos = imageUri?.let { resolver.openOutputStream(it) }
+            }
+        } else {
+            // These for devices running on android < Q
+            val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            val image = File(imagesDir, filename)
+            fos = FileOutputStream(image)
+        }
+
+        fos?.use {
+            // Finally writing the bitmap to the output stream that we opened
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+            Toast.makeText(this , "Capture Berhasil" , Toast.LENGTH_SHORT).show()
+        }
+    }
     private fun simpanGambar(bitmap: Bitmap){
+
+
         val filename = "${System.currentTimeMillis()}.jpg"
         //lokasiFile = Environment.DIRECTORY_PICTURES.toString() + "/" + filename
         var fos: OutputStream? = null
@@ -449,6 +530,7 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
         }
     }
     private fun clearAllAnchors(){
+        _metadata = ""
         placedAnchors.clear()
         for (anchorNode in placedAnchorNodes){
             arFragment!!.arSceneView.scene.removeChild(anchorNode)
@@ -685,6 +767,20 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
 
     @SuppressLint("SetTextI18n")
     override fun onUpdate(frameTime: FrameTime) {
+        try{
+                val gbr:Image = arFragment!!.arSceneView.arFrame!!.acquireCameraImage()
+            val gbrFormat = gbr.format
+            gbr.close()
+            if(gbrFormat == ImageFormat.YUV_420_888){
+                Log.d("Image Format","--**Image Format YUV")
+            } else {
+                Log.d("Image Format","--**NOT Image Format YUV")
+            }
+            gambarAr = arFragment!!.arSceneView.arFrame!!.acquireCameraImage()
+            gambarAr.close()
+        } catch (ex : java.lang.Exception ){
+            Log.d("Salah Get Image", "Salah Get Image - $ex")
+        }
         when(distanceMode) {
             distanceModeArrayList[0] -> {
                 measureDistanceFromCamera()
@@ -702,6 +798,7 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
                 measureDistanceFromCamera()
             }
         }
+
     }
 
     private fun measureDistanceFromGround(){
@@ -742,6 +839,7 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
     }
 
     private fun measureMultipleDistances(){
+        _metadata = ""
         if (placedAnchorNodes.size > 1){
             for (i in 0 until placedAnchorNodes.size){
                 for (j in i+1 until placedAnchorNodes.size){
@@ -752,6 +850,7 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
                     val distanceCMFloor = "%.2f".format(distanceCM)
                     multipleDistances[i][j]!!.setText(distanceCMFloor)
                     multipleDistances[j][i]!!.setText(distanceCMFloor)
+                    _metadata = _metadata + " | " + i.toString() + "-" + j.toString() + "=" + distanceCM
                 }
             }
         }
@@ -830,6 +929,43 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
         }
         return true
     }
+
+    private fun NV21toJPEG(nv21: ByteArray, width: Int, height: Int): ByteArray? {
+        val out = ByteArrayOutputStream()
+        val yuv = YuvImage(nv21, android.graphics.ImageFormat.NV21, width, height, null)
+        yuv.compressToJpeg(Rect(0, 0, width, height), 100, out)
+        return out.toByteArray()
+    }
+
+    fun WriteImageInformation(image: Image, path: String?) {
+        var data: ByteArray? = null
+        data = NV21toJPEG(
+            YUV_420_888toNV21(image),
+            image.width, image.height
+        )
+        val bos = BufferedOutputStream(FileOutputStream(path))
+        bos.write(data)
+        bos.flush()
+        bos.close()
+    }
+
+    private fun YUV_420_888toNV21(image: Image): ByteArray {
+        val nv21: ByteArray
+        val yBuffer = image.planes[0].buffer
+        val uBuffer = image.planes[1].buffer
+        val vBuffer = image.planes[2].buffer
+        val ySize = yBuffer.remaining()
+        val uSize = uBuffer.remaining()
+        val vSize = vBuffer.remaining()
+        nv21 = ByteArray(ySize + uSize + vSize)
+
+        //U and V are swapped
+        yBuffer[nv21, 0, ySize]
+        vBuffer[nv21, ySize, vSize]
+        uBuffer[nv21, ySize + vSize, uSize]
+        return nv21
+    }
+
 
 
 }

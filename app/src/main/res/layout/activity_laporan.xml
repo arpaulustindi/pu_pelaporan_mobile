@@ -32,8 +32,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
-            android:inputType="textPersonName"
-            android:text="Name" />
+            android:hint="Nama Pelapor"
+            android:inputType="textPersonName" />
 
         <TextView
             android:id="@+id/textView5"
@@ -59,20 +59,24 @@
             android:id="@+id/imageView"
             android:layout_width="match_parent"
             android:layout_height="302dp"
+            android:adjustViewBounds="true"
+            android:rotation="90"
+            android:scaleType="centerInside"
             tools:srcCompat="@tools:sample/backgrounds/scenic" />
 
         <TextView
-            android:id="@+id/txtDetail"
+            android:id="@+id/txtDetailX"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Lokasi Detail" />
 
         <EditText
-            android:id="@+id/editTextTextMultiLine"
+            android:id="@+id/txtDetail"
             android:layout_width="match_parent"
             android:layout_height="90dp"
             android:ems="10"
             android:gravity="start|top"
+            android:hint="Lokasi Detail"
             android:inputType="textMultiLine" />
 
         <TextView
@@ -85,6 +89,7 @@
             android:id="@+id/txtMeta"
             android:layout_width="match_parent"
             android:layout_height="74dp"
+            android:editable="false"
             android:ems="10"
             android:gravity="start|top"
             android:inputType="textMultiLine" />

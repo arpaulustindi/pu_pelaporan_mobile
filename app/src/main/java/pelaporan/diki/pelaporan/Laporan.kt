@@ -18,6 +18,7 @@ import java.io.FileOutputStream
 import android.os.Environment
 
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.activity_laporan.*
 
 import okhttp3.MediaType
 
@@ -27,6 +28,11 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class Laporan : AppCompatActivity() {
+    lateinit var _nama : EditText
+    lateinit var _hp : EditText
+    lateinit var _detail : EditText
+    lateinit var _metadata: EditText
+
     private lateinit var buttonKirim: Button
     private  lateinit var lokasiFile: String
     private var selectedImageUri: Uri? = null
@@ -42,15 +48,16 @@ class Laporan : AppCompatActivity() {
         val bundle: Bundle? = intent.extras!!
         //val resId: Bitmap = bundle?.getInt("resId") as Bitmap
         val resId: String = bundle?.getString("resId") as String
+        val metaData: String = bundle.getString("metadata") as String
         lokasiFile = resId
         val imgFile: File =  File(resId)
         if(imgFile.exists()){
             val myBitmap: Bitmap = BitmapFactory.decodeFile(imgFile.toString())
             imageView.setImageBitmap(myBitmap)
+            txtMeta.setText(metaData)
 
 
         }
-        nama.setText(resId)
         //val imageBitmap = bundle?.get("resId") as Bitmap
         //imageView.setImageBitmap(imageBitmap)
         buttonKirim = findViewById(R.id.btnKirim)
@@ -64,26 +71,16 @@ class Laporan : AppCompatActivity() {
     }
 
     private fun uploadImage() {
+        _nama = findViewById(R.id.txtName)
+        _hp = findViewById(R.id.txtHp)
+        _detail = findViewById(R.id.txtDetail)
+        _metadata = findViewById(R.id.txtMeta)
 
-        /*if (selectedImageUri == null) {
-            layout_root.snackbar("Select an Image First")
-            return
-        }*/
-
-        /*val parcelFileDescriptor = contentResolver.openFileDescriptor(
-            selectedImageUri!!, "r", null
-        ) ?: return*/
-
-        //val inputStream = FileInputStream(parcelFileDescriptor.fileDescriptor)
         val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
         val file = File(lokasiFile)
 
-        //PRINT--
-        println("1 FIle : $lokasiFile")
-
         val outputStream = FileOutputStream(file)
-        //inputStream.copyTo(outputStream)
-        //progress_bar.progress = 0
+
         val body = UploadRequestBody(file,"image", this)
         MyApi().uploadImage(
             MultipartBody.Part.createFormData(
@@ -92,17 +89,10 @@ class Laporan : AppCompatActivity() {
 
             body
         ),
-            RequestBody.create(MediaType.parse("multipart/form-data"),"[{\n" +
-                    "  \"Test1\": {\n" +
-                    "    \"Val1\": \"37\",\n" +
-                    "    \"Val2\": \"25\"\n" +
-                    "  }\n" +
-                    "}, {\n" +
-                    "  \"Test2\": {\n" +
-                    "    \"Val1\": \"25\",\n" +
-                    "    \"Val2\": \"27\"\n" +
-                    "  }\n" +
-                    "}]")
+            RequestBody.create(MediaType.parse("multipart/form-data"),_nama.text.toString()),
+            RequestBody.create(MediaType.parse("multipart/form-data"),_hp.text.toString()),
+            RequestBody.create(MediaType.parse("multipart/form-data"),_detail.text.toString()),
+            RequestBody.create(MediaType.parse("multipart/form-data"),_metadata.text.toString())
         ).enqueue(object : Callback<UploadResponse>{
             override fun onResponse(
                 call: Call<UploadResponse>,

@@ -15,6 +15,9 @@ interface MyApi {
     @POST("lapor")
     fun uploadImage(
         @Part gambar: MultipartBody.Part,
+        @Part("nama") nama: RequestBody,
+        @Part("hp") hp: RequestBody,
+        @Part("detail") detail: RequestBody,
         @Part("metadata") metadata: RequestBody
 
     ): Call<UploadResponse>
