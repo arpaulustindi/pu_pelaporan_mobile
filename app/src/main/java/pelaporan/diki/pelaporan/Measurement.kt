@@ -386,7 +386,7 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
         laporButton.setOnClickListener{
             /*Gambar AR*/
             //Skema 1
-
+            /*
             gambarAr = arFragment!!.arSceneView.arFrame!!.acquireCameraImage()
 
             simpanGambar3(gambarAr)
@@ -395,6 +395,8 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
             intent.putExtra("resId", lokasiFile)
             intent.putExtra("metadata", _metadata)
             startActivity(intent)
+            */
+
             //--Skema 1
 
             //Skema 2
@@ -408,9 +410,22 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
             } else {
                 println("-----bitmap null")
             }
-            */
 
+            */
             //--Skema 2
+
+            //Skema 3
+            val bitmap = screenGambar(bingkai)
+            if(bitmap != null){
+                val filename = "${System.currentTimeMillis()}.jpg"
+                screenGambar3(filename)
+                val intent = Intent(this@Measurement, Laporan::class.java)
+                intent.putExtra("resId", lokasiFile)
+                startActivity(intent)
+            } else {
+                println("-----bitmap null")
+            }
+            //--Skema 3
 
         }
     }
@@ -431,6 +446,29 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
         }
         return gambar
     }
+
+    private fun  screenGambar2(view: View): Bitmap?{
+        val screenshot= Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        val drawBoard = Canvas(screenshot)
+        val actualScreen = view.background
+        if (actualScreen != null) actualScreen.draw(drawBoard)
+        else drawBoard.drawColor(Color.WHITE)
+        view.draw(drawBoard)
+        return screenshot
+    }
+
+    private fun screenGambar3(filename: String){
+
+        val sh = Runtime.getRuntime().exec("su", null, null)
+        val os = sh.outputStream
+
+        lokasiFile = "/storage/emulated/0" + "/" + Environment.DIRECTORY_PICTURES + "/" + filename
+        os.write(("/system/bin/screencap -p " + filename).toByteArray(charset("ASCII")))
+        os.flush()
+
+    }
+
+
     private fun simpanGambar2(image: Image){
         val filename = "${System.currentTimeMillis()}.jpg"
         lokasiFile = "/storage/emulated/0" + "/" + Environment.DIRECTORY_PICTURES + "/" + filename
@@ -688,7 +726,10 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
 
         arFragment!!.arSceneView.scene.addOnUpdateListener(this)
         arFragment!!.arSceneView.scene.addChild(anchorNode)
+        //SINI
+
         node.select()
+
     }
 
 
@@ -949,6 +990,7 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
         bos.close()
     }
 
+
     private fun YUV_420_888toNV21(image: Image): ByteArray {
         val nv21: ByteArray
         val yBuffer = image.planes[0].buffer
@@ -965,6 +1007,16 @@ class Measurement : AppCompatActivity(), Scene.OnUpdateListener {
         uBuffer[nv21, ySize + vSize, uSize]
         return nv21
     }
+
+    private fun overlay(bmp1: Bitmap, bmp2: Bitmap): Bitmap? {
+        val bmOverlay = Bitmap.createBitmap(bmp1.width, bmp1.height, bmp1.config)
+        val canvas = Canvas(bmOverlay)
+        canvas.drawBitmap(bmp1, Matrix(), null)
+        canvas.drawBitmap(bmp2, Matrix(), null)
+        return bmOverlay
+    }
+
+
 
 
 
